@@ -1,0 +1,8 @@
+{
+  "message": "Hello World",
+  "from": "raulangelj@alumchat.fun",
+  "to": "bryann1@alumchat.fun",
+  "route": ["b", "a", "c"],
+  "distance": "3",
+  "algorithm": "flooding"
+}

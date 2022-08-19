@@ -1,7 +1,14 @@
 {
   "jim19017": "a",
-  "gar19386": "b",
-  "sar19322": "c",
-  "alf19372": "d",
-  "arr19381": "e"
+  "test3": "b",
+  "raulangelj": "c",
+  "bryann1": "d",
+  "raultest2": "e",
+  "config": {
+    "a": ["b", "c"],
+    "b": ["a"],
+    "c": ["a", "d", "e"],
+    "d": ["c"],
+    "e": ["c"]
+  }
 }

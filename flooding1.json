@@ -1,0 +1,12 @@
+{
+  "jim19017": "a",
+  "raultest2": "b",
+  "raulangelj": "c",
+  "raultest3": "d",
+  "config": {
+    "a": ["b", "c"],
+    "b": ["a", "c"],
+    "c": ["a", "d", "b"],
+    "d": ["c"]
+  }
+}

@@ -33,11 +33,12 @@ if __name__ == '__main__':
 	algorithm = input('Choose an algorithm:\n>>')
 	if algorithm == '1':
 		print('Flooding')
-		jid = input('Enter your JID: \n>>')
+		jid = input('Enter your JID: (without @alumchat.fun) \n>>')
 		password = input('Enter your password: \n>>')
-		client = Client(jid, password, 'floooding')
+		jid = f'{jid}@alumchat.fun'
+		client = Client(jid, password, 'flooding')
 		client.connect(disable_starttls=False)
-		client.process()
+		client.process(forever=False)
 		exit(1)
 	elif algorithm == '2':
 		print('Distance vector routing')
