@@ -41,20 +41,18 @@ class Client(slixmpp.ClientXMPP):
 						jid_to = await ainput('JID to: ')
 						message = await ainput('Message: ')
 						await self.send_new_message(message, jid_to)
-						# self.send_message(
-						# 	mto=jid_to,
-						# 	mbody=message,
-						# 	mtype='chat'
-						# )
 					else:
 						print('You must open a file')
 				elif option == '2':
 					data_file = input('Enter the file for information:\n>>')
 					# READ JSON FILE FOR FLOODING
-					f = open(data_file)
-					algorithm_data = json.load(f)
-					self.algorithm_data = algorithm_data
-					print(algorithm_data)
+					try:
+						f = open(data_file)
+						algorithm_data = json.load(f)
+						self.algorithm_data = algorithm_data
+						print(algorithm_data)
+					except Exception as e:
+						print(e)
 				elif option == '3':
 					connected = False
 					self.disconnect()
@@ -72,24 +70,22 @@ class Client(slixmpp.ClientXMPP):
 		user = str(message['from']).split('@')[0]
 		await aprint(f'{user}: {message["body"]}')
 		if self.algorithm == 'flooding':
-			if not self.algorithm_data:
-				# READ JSON FILE FOR FLOODING
-				f = open('flooding.json')
-				algorithm_data = json.load(f)
-				self.algorithm_data = algorithm_data
-				print(algorithm_data)
-			self.flooding(self.algorithm_data, message)
+			try:
+				if not self.algorithm_data:
+					# READ JSON FILE FOR FLOODING
+					f = open('./FLOODING/flooding.json')
+					algorithm_data = json.load(f)
+					self.algorithm_data = algorithm_data
+					print(algorithm_data)
+				self.flooding(self.algorithm_data, message)
+			except Exception as e:
+				print(e)
 
 	async def send_new_message(self, message, to):
 		userName = self.jid.split('@')[0]
 		userNameToSend = to.split('@')[0]
 		message_to_send = {'from': self.algorithm_data[userName], 'to': self.algorithm_data[userNameToSend], 'route': [self.algorithm_data[userName]], 'distance': 0, 'message': message, "algorithm": self.algorithm}
 
-		# self.send_message(
-		# 	mto=to,
-		# 	mbody=json.dumps(message_to_send),
-		# 	mtype='chat'
-		# )
 		selfNode = self.algorithm_data[self.jid.split('@')[0]]
 		neighbours = self.algorithm_data['config'][selfNode]
 		neighbours_jid = [jid for jid in list(self.algorithm_data.keys()) if jid != 'config' and self.algorithm_data[jid] in neighbours]
@@ -125,7 +121,7 @@ class Client(slixmpp.ClientXMPP):
 					continue
 				else:
 					already_send_nodes.append(node_reciver)
-		print('Already send to:', already_send_nodes)
+		print('Ya se envio a:', already_send_nodes)
 		if message['to'] != self.algorithm_data[self.jid.split('@')[0]] and selfNode not in message['route']:
 			for jid in neighbours_jid:
 				if  message['from'] != algorithm_data[jid] and algorithm_data[jid] not in already_send_nodes:
@@ -145,7 +141,3 @@ class Client(slixmpp.ClientXMPP):
 				El mensaje dice:\n
 				{message['message']}
 			""")
-
-		
-		# for neighbour in neighbours:
-		# 	if  message['from']

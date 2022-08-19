@@ -50,22 +50,3 @@ if __name__ == '__main__':
 	else:
 		print('Invalid option')
 		time.sleep(1)
-	# while option != '4':
-	# 	print(first_menu)
-	# 	option = input('Choose an option:\n> ')
-	# 	if option == '1':
-	# 		jid = input('JID: ')
-	# 		password = input('Password: ')
-	# 		client = Client(jid, password)
-	# 		client.connect(disable_starttls=False)
-	# 		client.process()
-	# 	elif option == '2':
-	# 		pass
-	# 	elif option == '3':
-	# 		pass
-	# 	elif option == '4':
-	# 		print('Goodbye!')
-	# 	else:
-	# 		print('Invalid option')
-	# 		time.sleep(1)
-	# 		continue
