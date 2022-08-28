@@ -1,6 +1,7 @@
 import slixmpp
 import time
 import json
+from LINK_STATE.dijkstra import Graph
 from aioconsole import ainput, aprint
 from slixmpp.exceptions import IqError, IqTimeout
 
@@ -82,25 +83,30 @@ class Client(slixmpp.ClientXMPP):
 				print(e)
 
 	async def send_new_message(self, message, to):
-		userName = self.jid.split('@')[0]
-		userNameToSend = to.split('@')[0]
-		message_to_send = {'from': self.algorithm_data[userName], 'to': self.algorithm_data[userNameToSend], 'route': [self.algorithm_data[userName]], 'distance': 0, 'message': message, "algorithm": self.algorithm}
+		if self.algorithm == 'flooding':
+			userName = self.jid.split('@')[0]
+			userNameToSend = to.split('@')[0]
+			message_to_send = {'from': self.algorithm_data[userName], 'to': self.algorithm_data[userNameToSend], 'route': [self.algorithm_data[userName]], 'distance': 0, 'message': message, "algorithm": self.algorithm}
 
-		selfNode = self.algorithm_data[self.jid.split('@')[0]]
-		neighbours = self.algorithm_data['config'][selfNode]
-		neighbours_jid = [jid for jid in list(self.algorithm_data.keys()) if jid != 'config' and self.algorithm_data[jid] in neighbours]
+			selfNode = self.algorithm_data[self.jid.split('@')[0]]
+			neighbours = self.algorithm_data['config'][selfNode]
+			neighbours_jid = [jid for jid in list(self.algorithm_data.keys()) if jid != 'config' and self.algorithm_data[jid] in neighbours]
 
-		if message_to_send['to'] != self.algorithm_data[self.jid.split('@')[0]]:
-			for jid in neighbours_jid:
-				if  message_to_send['from'] != jid:
-					message_to_send['distance'] += 1
-					self.send_message(
-						mto=f'{jid}@alumchat.fun',
-						mbody=json.dumps(message_to_send),
-						mtype='chat'
-					)
-					print('message sent to', jid)
-					time.sleep(1)
+			if message_to_send['to'] != self.algorithm_data[self.jid.split('@')[0]]:
+				for jid in neighbours_jid:
+					if  message_to_send['from'] != jid:
+						message_to_send['distance'] += 1
+						self.send_message(
+							mto=f'{jid}@alumchat.fun',
+							mbody=json.dumps(message_to_send),
+							mtype='chat'
+						)
+						print('message sent to', jid)
+						time.sleep(1)
+		elif self.algorithm == 'link_state':
+			nodes = "".join(self.algorithm_data['config'].keys())
+			graph = Graph(len(nodes))
+			print('NODES:', nodes)
 
 
 	def flooding(self, algorithm_data, message):

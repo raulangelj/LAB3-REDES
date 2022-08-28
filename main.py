@@ -44,6 +44,13 @@ if __name__ == '__main__':
 		print('Distance vector routing')
 	elif algorithm == '3':
 		print('Link state routing')
+		jid = input('Enter your JID: (without @alumchat.fun) \n>>')
+		password = input('Enter your password: \n>>')
+		jid = f'{jid}@alumchat.fun'
+		client = Client(jid, password, 'link_state')
+		client.connect(disable_starttls=False)
+		client.process(forever=False)
+
 	elif algorithm == '4':
 		print('Exit')
 		exit(1)
