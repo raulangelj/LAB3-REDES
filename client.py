@@ -86,7 +86,7 @@ class Client(slixmpp.ClientXMPP):
 		if self.algorithm == 'flooding':
 			userName = self.jid.split('@')[0]
 			userNameToSend = to.split('@')[0]
-			message_to_send = {'from': self.algorithm_data[userName], 'to': self.algorithm_data[userNameToSend], 'route': [self.algorithm_data[userName]], 'distance': 0, 'message': message, "algorithm": self.algorithm}
+			message_to_send = {'from': self.algorithm_data[userName], 'to': self.algorithm_data[userNameToSend], 'node_jumps': 1, 'route': [self.algorithm_data[userName]], 'distance': 0, 'message': message, "algorithm": self.algorithm}
 
 			selfNode = self.algorithm_data[self.jid.split('@')[0]]
 			neighbours = self.algorithm_data['config'][selfNode]
@@ -127,23 +127,34 @@ class Client(slixmpp.ClientXMPP):
 					continue
 				else:
 					already_send_nodes.append(node_reciver)
-		print('Ya se envio a:', already_send_nodes)
+		print('Se envio anteriormente a:', already_send_nodes)
 		if message['to'] != self.algorithm_data[self.jid.split('@')[0]] and selfNode not in message['route']:
 			for jid in neighbours_jid:
 				if  message['from'] != algorithm_data[jid] and algorithm_data[jid] not in already_send_nodes:
 					message['route'].append(algorithm_data[self.jid.split('@')[0]])
 					message['distance'] += 1
+					message['node_jumps'] += 1
 					self.send_message(
 						mto=f'{jid}@alumchat.fun',
 						mbody=json.dumps(message),
 						mtype='chat'
 					)
-					print('message sent to', jid)
+					print('message from node (', message['from'] ,')')
+					print('message sent to', jid, ' node (', message['to'] ,')')
 					time.sleep(1)
 		else:
+			jid_sender = ''
+			jid_reciver = ''
+			for keys in algorithm_data.keys():
+				if algorithm_data[keys] == message['to']:
+					jid_reciver = keys
+				if algorithm_data[keys] == message['from']:
+					jid_sender = keys
 			print(f"""
-				Tienes un nuevo mensaje de: {message['from']}\n
+				Tienes un nuevo mensaje de: {message['from']} ({jid_sender}@alumchat.fun)\n
+				Para {message['to']} ({jid_reciver}@alumchat.fun)\n
 				El cual paso por los nodos: {message['route']}\n
+				Y se enviaron {message['node_jumps']} (saltos o cantidad de nodos recorridos) veces\n
 				El mensaje dice:\n
 				{message['message']}
 			""")

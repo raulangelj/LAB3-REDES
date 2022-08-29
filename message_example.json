@@ -3,6 +3,7 @@
   "from": "raulangelj@alumchat.fun",
   "to": "bryann1@alumchat.fun",
   "route": ["b", "a", "c"],
+  "node_jumps": 3,
   "distance": "3",
   "algorithm": "flooding"
 }
