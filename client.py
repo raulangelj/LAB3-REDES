@@ -4,6 +4,7 @@ import json
 from LINK_STATE.dijkstra import Graph
 from aioconsole import ainput, aprint
 from slixmpp.exceptions import IqError, IqTimeout
+from LINK_STATE.dijkstra import dijkstra_algorithm, Graph, print_result
 
 class Client(slixmpp.ClientXMPP):
 	def __init__(self, jid, password, algorithm):
@@ -68,8 +69,8 @@ class Client(slixmpp.ClientXMPP):
 			self.disconnect()
 	
 	async def message(self, message):
-		user = str(message['from']).split('@')[0]
-		await aprint(f'{user}: {message["body"]}')
+		# user = str(message['from']).split('@')[0]
+		# await aprint(f'{user}: {message["body"]}')
 		if self.algorithm == 'flooding':
 			try:
 				if not self.algorithm_data:
@@ -79,6 +80,17 @@ class Client(slixmpp.ClientXMPP):
 					self.algorithm_data = algorithm_data
 					print(algorithm_data)
 				self.flooding(self.algorithm_data, message)
+			except Exception as e:
+				print(e)
+		elif self.algorithm == 'link_state':
+			try:
+				if not self.algorithm_data:
+					# READ JSON FILE FOR FLOODING
+					f = open('./LINK_STATE/LINK_STATE.json')
+					algorithm_data = json.load(f)
+					self.algorithm_data = algorithm_data
+					print(algorithm_data)
+				self.link_state(self.algorithm_data, message)
 			except Exception as e:
 				print(e)
 
@@ -104,9 +116,55 @@ class Client(slixmpp.ClientXMPP):
 						print('message sent to', jid)
 						time.sleep(1)
 		elif self.algorithm == 'link_state':
-			nodes = "".join(self.algorithm_data['config'].keys())
-			graph = Graph(len(nodes))
-			print('NODES:', nodes)
+			try:
+				algorithm_data = self.algorithm_data
+				sender_userName = self.jid.split('@')[0]
+				recivier_userName = to.split('@')[0]
+				sender_node = algorithm_data[sender_userName]
+				recivier_node = algorithm_data[recivier_userName]
+				# print(algorithm_data)
+				nodes = list(algorithm_data['config'].keys())
+				print('NODES:', nodes, len(nodes))
+
+				init_grapgh = {node: {} for node in nodes}
+
+				for key in (algorithm_data['config'].keys()):
+					for key2 in algorithm_data['config'][key]:
+						for _ in range(len(key2)):
+							first_node = list(key2.keys())[0]
+							init_grapgh[key][first_node] = key2[first_node]
+				print('init_grapgh:', init_grapgh)
+				graph = Graph(nodes, init_grapgh)
+				previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node=sender_node)
+				route, weight = print_result(previous_nodes, shortest_path, start_node=sender_node, target_node=recivier_node)
+				best_route = route[::-1]
+				print('best_route:', best_route)
+				print('weight:', weight)
+				# prepare message to send
+				message_to_send = {
+					'from': self.boundjid.bare,
+					'to': to,
+					'message': message,
+					'algorithm': self.algorithm,
+					'route': best_route,
+					'distance': weight,
+					'node_jumps': 1
+				}
+				# find the key from algorithm_data that values matches th best_route[1]
+				for key in algorithm_data.keys():
+					if algorithm_data[key] == best_route[1]:
+						real_jid = key
+						break
+				self.send_message(
+					mto=f'{real_jid}@alumchat.fun',
+					mbody=json.dumps(message_to_send),
+					mtype='chat'
+				)
+				print('message_to_send:', message_to_send)
+				print('message sent to', f'{real_jid}@alumchat.fun')
+			except Exception as e:
+				print('Error:', e)
+
 
 
 	def flooding(self, algorithm_data, message):
@@ -158,3 +216,41 @@ class Client(slixmpp.ClientXMPP):
 				El mensaje dice:\n
 				{message['message']}
 			""")
+
+	def link_state(self, algorithm_data, message):
+		self_username = self.boundjid.bare.split('@')[0]
+		self_node = algorithm_data[self_username]
+		real_message = json.loads(message['body'])
+		node_to_send_index = real_message['node_jumps'] + 1
+		# found the real reciver
+		if self.boundjid.bare == str(real_message['to']).split('/')[0]:
+			print(f"""
+				Tienes un nuevo mensaje de: {real_message['from']} ({algorithm_data[real_message['from'].split('@')[0]]})\n
+				Para {real_message['to']} ({algorithm_data[real_message['to'].split('@')[0]]})\n
+				El cual paso por los nodos: {real_message['route']}\n
+				Y se enviaron {real_message['node_jumps']} (saltos o cantidad de nodos recorridos) veces\n
+				Recorrio una distancia minima de {real_message['distance']}
+				El mensaje dice:\n
+				{real_message['message']}
+			""")
+		else:
+			node_to_send = real_message['route'][node_to_send_index]
+			# modify our node_jumps
+			real_message['node_jumps'] += 1
+			# find the key that matches the node_to_send in algorithm_data
+			for key in algorithm_data.keys():
+				if algorithm_data[key] == node_to_send:
+					jid_to_send = key
+					break
+			# send the message to the next node
+			self.send_message(
+				mto=f'{jid_to_send}@alumchat.fun',
+				mbody=json.dumps(real_message),
+				mtype='chat'
+			)
+			print('message from node', str(message['from']).split('/')[0])
+			print('message sent to', jid_to_send)
+			# print('message ', real_message)
+
+
+

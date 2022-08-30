@@ -68,7 +68,9 @@ try:
   print('init_grapgh:', init_grapgh)
   graph = Graph(nodes, init_grapgh)
   previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node="a")
-  print_result(previous_nodes, shortest_path, start_node="a", target_node="d")
+  a, b = print_result(previous_nodes, shortest_path, start_node="a", target_node="d")
+  a.reverse()
+  print(a, b)
 
 except Exception as e:
   print(e)
