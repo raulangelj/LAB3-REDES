@@ -5,6 +5,7 @@ from LINK_STATE.dijkstra import Graph
 from aioconsole import ainput, aprint
 from slixmpp.exceptions import IqError, IqTimeout
 from LINK_STATE.dijkstra import dijkstra_algorithm, Graph, print_result
+from DISTANCE_VECTOR.bellman import Graph_Bellman
 
 class Client(slixmpp.ClientXMPP):
 	def __init__(self, jid, password, algorithm):
@@ -127,7 +128,6 @@ class Client(slixmpp.ClientXMPP):
 						print('message sent to', jid)
 						time.sleep(1)
 		elif self.algorithm == 'distance_vector':
-			print('AAA')
 			try:
 				algorithm_data = self.algorithm_data
 				sender_userName = self.jid.split('@')[0]
@@ -136,33 +136,50 @@ class Client(slixmpp.ClientXMPP):
 				recivier_node = algorithm_data[recivier_userName]
 				# print(algorithm_data)
 				nodes = list(algorithm_data['config'].keys())
+				config = algorithm_data['config']
 				print('NODES:', nodes, len(nodes))
-				# Adaptar el grafo
-				# route, weight = bellman()
-
-				# prepare message to send
-				# message_to_send = {
-				# 	'from': self.boundjid.bare,
-				# 	'to': to,
-				# 	'message': message,
-				# 	'algorithm': self.algorithm,
-				# 	'route': route,
-				# 	'distance': weight,
-				# 	'node_jumps': 1
-				# }
-				# # find the key from algorithm_data that values matches th route[1]
-				# for key in algorithm_data.keys():
-				# 	if algorithm_data[key] == route[1]:
-				# 		real_jid = key
-				# 		break
-				# self.send_message(
-				# 	mto=f'{real_jid}@alumchat.fun',
-				# 	mbody=json.dumps(message_to_send),
-				# 	mtype='chat'
-				# )
-				# print('message_to_send:', message_to_send)
-				# print('message sent to', f'{real_jid}@alumchat.fun')
+				# Creamos nuestro grafo
+				nodes_complete = "".join(nodes)
+				g = Graph_Bellman(len(nodes))
+				print('G:', g)
+				for node in config:
+					for neighbour in config[node]:
+						print('NODE:', node, 'NEIGHBOUR:', neighbour)
+						for key in neighbour:
+							g.addEdge(nodes_complete.find(node), nodes_complete.find(key) , neighbour[key])
 				
+				sender_index = nodes_complete.find(sender_node)
+				recivier_index = nodes_complete.find(recivier_node)
+				route, weight = g.BellmanFord(sender_index, recivier_index)
+				print('ROUTE:', route)
+				print('WEIGHT:', weight)
+
+				# convertir route a los nodos de la red
+				route_nodes = [nodes[node] for node in route]
+				# prepare message to send
+				message_to_send = {
+					'from': self.boundjid.bare,
+					'to': to,
+					'message': message,
+					'algorithm': self.algorithm,
+					'route': route_nodes,
+					'distance': weight,
+					'node_jumps': 1
+				}
+				
+				# find the key from algorithm_data that values matches th route_nodes[1]
+				for key in algorithm_data.keys():
+					if algorithm_data[key] == route_nodes[1]:
+						real_jid = key
+						break
+				self.send_message(
+					mto=f'{real_jid}@alumchat.fun',
+					mbody=json.dumps(message_to_send),
+					mtype='chat'
+				)
+				print('message_to_send:', message_to_send)
+				print('message sent to', f'{real_jid}@alumchat.fun')
+
 			except Exception as e:
 				print('Error:', e)
 
@@ -272,12 +289,44 @@ class Client(slixmpp.ClientXMPP):
 		""" 
 			Recibir mensaje
 		"""
-		print('Recibir')
 		
 		self_username = self.boundjid.bare.split('@')[0]
 		self_node = algorithm_data[self_username]
 		real_message = json.loads(message['body'])
 		node_to_send_index = real_message['node_jumps'] + 1
+		
+		nodes = list(algorithm_data['config'].keys())
+		config = algorithm_data['config']
+		# Creamos nuestro grafo
+		nodes_complete = "".join(nodes)
+
+		if self.boundjid.bare == str(real_message['to']).split('/')[0]:
+			print(f"""
+				Tienes un nuevo mensaje de: {real_message['from']} ({algorithm_data[real_message['from'].split('@')[0]]})\n
+				Para {real_message['to']} ({algorithm_data[real_message['to'].split('@')[0]]})\n
+				El cual paso por los nodos: {real_message['route']}\n
+				Y se enviaron {real_message['node_jumps']} (saltos o cantidad de nodos recorridos) veces\n
+				Recorrio una distancia minima de {real_message['distance']}
+				El mensaje dice:\n
+				{real_message['message']}
+			""")
+		else:
+			node_to_send = real_message['route'][node_to_send_index]
+			# modify our node_jumps
+			real_message['node_jumps'] += 1
+			# find the key that matches the node_to_send in algorithm_data
+			for key in algorithm_data.keys():
+				if algorithm_data[key] == node_to_send:
+					jid_to_send = key
+					break
+			# send the message to the next node
+			self.send_message(
+				mto=f'{jid_to_send}@alumchat.fun',
+				mbody=json.dumps(real_message),
+				mtype='chat'
+			)
+			print('message from node', str(message['from']).split('/')[0])
+			print('message sent to', jid_to_send)
 
 	def link_state(self, algorithm_data, message):
 		self_username = self.boundjid.bare.split('@')[0]
@@ -313,6 +362,5 @@ class Client(slixmpp.ClientXMPP):
 			print('message from node', str(message['from']).split('/')[0])
 			print('message sent to', jid_to_send)
 			# print('message ', real_message)
-
 
 
