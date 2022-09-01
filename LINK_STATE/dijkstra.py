@@ -93,4 +93,7 @@ def print_result(previous_nodes, shortest_path, start_node, target_node):
     print(f"We found the following best path with a value of {shortest_path[target_node]}.")
 
     print(" -> ".join(reversed(path)))
+    """
+        ['a', 'd', 'c']
+    """
     return path, shortest_path[target_node]

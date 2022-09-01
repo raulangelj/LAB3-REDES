@@ -82,6 +82,17 @@ class Client(slixmpp.ClientXMPP):
 				self.flooding(self.algorithm_data, message)
 			except Exception as e:
 				print(e)
+		elif self.algorithm == 'distance_vector':
+			try:
+				if not self.algorithm_data:
+					# READ JSON FILE FOR DISTANCE_VECTOR
+					f = open('./DISTANCE_VECTOR/DISTANCE_VECTOR.json')
+					algorithm_data = json.load(f)
+					self.algorithm_data = algorithm_data
+					print(algorithm_data)
+				self.distance_vector(self.algorithm_data, message)
+			except Exception as e:
+				print(e)
 		elif self.algorithm == 'link_state':
 			try:
 				if not self.algorithm_data:
@@ -115,6 +126,46 @@ class Client(slixmpp.ClientXMPP):
 						)
 						print('message sent to', jid)
 						time.sleep(1)
+		elif self.algorithm == 'distance_vector':
+			print('AAA')
+			try:
+				algorithm_data = self.algorithm_data
+				sender_userName = self.jid.split('@')[0]
+				recivier_userName = to.split('@')[0]
+				sender_node = algorithm_data[sender_userName]
+				recivier_node = algorithm_data[recivier_userName]
+				# print(algorithm_data)
+				nodes = list(algorithm_data['config'].keys())
+				print('NODES:', nodes, len(nodes))
+				# Adaptar el grafo
+				# route, weight = bellman()
+
+				# prepare message to send
+				# message_to_send = {
+				# 	'from': self.boundjid.bare,
+				# 	'to': to,
+				# 	'message': message,
+				# 	'algorithm': self.algorithm,
+				# 	'route': route,
+				# 	'distance': weight,
+				# 	'node_jumps': 1
+				# }
+				# # find the key from algorithm_data that values matches th route[1]
+				# for key in algorithm_data.keys():
+				# 	if algorithm_data[key] == route[1]:
+				# 		real_jid = key
+				# 		break
+				# self.send_message(
+				# 	mto=f'{real_jid}@alumchat.fun',
+				# 	mbody=json.dumps(message_to_send),
+				# 	mtype='chat'
+				# )
+				# print('message_to_send:', message_to_send)
+				# print('message sent to', f'{real_jid}@alumchat.fun')
+				
+			except Exception as e:
+				print('Error:', e)
+
 		elif self.algorithm == 'link_state':
 			try:
 				algorithm_data = self.algorithm_data
@@ -216,6 +267,17 @@ class Client(slixmpp.ClientXMPP):
 				El mensaje dice:\n
 				{message['message']}
 			""")
+	
+	def distance_vector(self, algorithm_data, message):
+		""" 
+			Recibir mensaje
+		"""
+		print('Recibir')
+		
+		self_username = self.boundjid.bare.split('@')[0]
+		self_node = algorithm_data[self_username]
+		real_message = json.loads(message['body'])
+		node_to_send_index = real_message['node_jumps'] + 1
 
 	def link_state(self, algorithm_data, message):
 		self_username = self.boundjid.bare.split('@')[0]
