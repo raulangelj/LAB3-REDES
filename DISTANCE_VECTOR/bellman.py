@@ -15,9 +15,6 @@ class Graph_Bellman:
         for i in range(self.V):
             print("{0}\t\t{1}".format(i, dist[i]))
  
-    # The main function that finds shortest distances from src to
-    # all other vertices using Bellman-Ford algorithm. The function
-    # also detects negative weight cycle
     def BellmanFord(self, src, dest):
         path = {}
         # Step 1: Initialize distances from src to all other vertices
@@ -28,23 +25,12 @@ class Graph_Bellman:
         for i in range(self.V):
             path[i] = (0,0)
  
-        # Step 2: Relax all edges |V| - 1 times. A simple shortest
-        # path from src to any other vertex can have at-most |V| - 1
-        # edges
         for _ in range(self.V - 1):
-            # Update dist value and parent index of the adjacent vertices of
-            # the picked vertex. Consider only those vertices which are still in
-            # queue
             for u, v, w in self.graph:
                 if dist[u] != float("Inf") and dist[u] + w < dist[v]:
                     dist[v] = dist[u] + w
                     path[v] = (u, v)
                     # print(u, v, w, 'AQUIII')
- 
-        # Step 3: check for negative-weight cycles. The above step
-        # guarantees shortest distances if graph doesn't contain
-        # negative weight cycle. If we get a shorter path, then there
-        # is a cycle.
  
         for u, v, w in self.graph:
             if dist[u] != float("Inf") and dist[u] + w < dist[v]:
@@ -67,11 +53,6 @@ class Graph_Bellman:
                         finished = True
                         break
         shortest_path = shortest_path[::-1]
- 
-        # print all distance
-        # print('path', path)
-        # print('shortest_path', shortest_path)
-        # print('Distancia', dist)
         self.printArr(dist)
         return shortest_path, dist[og_dest]
  
